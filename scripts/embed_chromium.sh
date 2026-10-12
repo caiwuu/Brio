@@ -44,6 +44,8 @@ rm -rf "$DST_DIR/Chromium.app"
 
 echo "[*] cp -R Chromium.app (保留 symlink)"
 cp -R "$SRC" "$DST_DIR/"
+# 扩展属性（如上游 dmg 带的 com.apple.FinderInfo）会让 codesign_app.sh 签名失败
+xattr -cr "$DST_DIR/Chromium.app"
 
 SIZE="$(du -sh "$DST_DIR/Chromium.app" | awk '{print $1}')"
 echo "[✓] 嵌入完成，大小 $SIZE (源 $(du -sh "$SRC" | awk '{print $1}'))"

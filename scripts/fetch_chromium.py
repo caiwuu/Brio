@@ -114,6 +114,9 @@ def extract_dmg(archive: Path, dest_app: Path) -> None:
                 raise SystemExit(f"[!] dmg 里没有 {MAC_APP}")
             # ditto 保留 symlink / 扩展属性；Chromium Framework 靠 Versions/Current 等 symlink 组织
             subprocess.run(["ditto", str(src), str(dest_app)], check=True)
+            # 上游 dmg 里的文件带 com.apple.FinderInfo，codesign 会报
+            # "resource fork, Finder information, or similar detritus not allowed"
+            subprocess.run(["xattr", "-cr", str(dest_app)], check=True)
         finally:
             if subprocess.run(["hdiutil", "detach", str(mnt), "-quiet"]).returncode != 0:
                 subprocess.run(["hdiutil", "detach", str(mnt), "-force", "-quiet"])

@@ -175,7 +175,8 @@ def test_cdp_browser_close_connection_dropped_counts_as_delivered(fake_cdp) -> N
 def test_cdp_browser_close_nothing_listening() -> None:
     t0 = time.monotonic()
     assert cdp_browser_close(pick_free_port()) is False
-    assert time.monotonic() - t0 < 1.0
+    # Windows 上连接被拒会先重试 SYN，约 1s 才报错；这里只防卡死
+    assert time.monotonic() - t0 < 3.0
 
 
 def test_cdp_browser_close_bad_version_endpoint() -> None:
