@@ -1,0 +1,7 @@
+# 不在这里写死 host triple，否则 Windows / CI 上会去装一个 macOS 工具链。
+# Apple Silicon 上 rustup 本身若是 x86_64 版（Rosetta 下安装），"stable" 会解析成
+# stable-x86_64-apple-darwin，需要执行一次 `rustup set default-host aarch64-apple-darwin`。
+[toolchain]
+channel = "stable"
+profile = "minimal"
+components = ["rustfmt", "clippy"]

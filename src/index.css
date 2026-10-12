@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =============================================================
+ * Design tokens (synced from ui.pen via Pencil get_variables)
+ * ============================================================= */
+@layer base {
+  :root {
+    /* ui.pen tokens (light) */
+    --bg-app: #fafafa;
+    --bg-card: #ffffff;
+    --bg-subtle: #f4f4f5;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --text-primary: #09090b;
+    --text-secondary: #52525b;
+    --text-muted: #a1a1aa;
+    --text-inverse: #ffffff;
+    --brand-primary: #6366f1;
+    --brand-secondary: #8b5cf6;
+    --brand-accent: #ec4899;
+    --brand-tint: #eef2ff;
+    --success: #10b981;
+    --success-bg: #ecfdf5;
+    --warning: #f59e0b;
+    --warning-bg: #fffbeb;
+    --danger: #ef4444;
+    --danger-bg: #fef2f2;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+
+    /* shadcn HSL bridge (light) */
+    --background-hsl: 0 0% 98%;
+    --foreground-hsl: 240 10% 4%;
+    --card-hsl: 0 0% 100%;
+    --card-foreground-hsl: 240 10% 4%;
+    --popover-hsl: 0 0% 100%;
+    --popover-foreground-hsl: 240 10% 4%;
+    --primary-hsl: 239 84% 67%;          /* indigo-500 */
+    --primary-foreground-hsl: 0 0% 100%;
+    --secondary-hsl: 240 5% 96%;
+    --secondary-foreground-hsl: 240 6% 10%;
+    --muted-hsl: 240 5% 96%;
+    --muted-foreground-hsl: 240 4% 46%;
+    --accent-hsl: 240 5% 96%;
+    --accent-foreground-hsl: 240 6% 10%;
+    --destructive-hsl: 0 84% 60%;
+    --destructive-foreground-hsl: 0 0% 100%;
+    --border-hsl: 240 6% 90%;
+    --input-hsl: 240 6% 90%;
+    --ring-hsl: 239 84% 67%;
+  }
+
+  .dark {
+    --bg-app: #09090b;
+    --bg-card: #18181b;
+    --bg-subtle: #27272a;
+    --border: #27272a;
+    --border-strong: #3f3f46;
+    --text-primary: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --text-inverse: #09090b;
+    --brand-primary: #818cf8;
+    --brand-secondary: #a78bfa;
+    --brand-accent: #f472b6;
+    --brand-tint: #1e1b4b;
+    --success: #34d399;
+    --success-bg: #052e1f;
+    --warning: #fbbf24;
+    --warning-bg: #3a2807;
+    --danger: #f87171;
+    --danger-bg: #3b0d0d;
+
+    --background-hsl: 240 6% 6%;
+    --foreground-hsl: 0 0% 98%;
+    --card-hsl: 240 6% 10%;
+    --card-foreground-hsl: 0 0% 98%;
+    --popover-hsl: 240 6% 10%;
+    --popover-foreground-hsl: 0 0% 98%;
+    --primary-hsl: 234 89% 74%;
+    --primary-foreground-hsl: 240 6% 10%;
+    --secondary-hsl: 240 4% 16%;
+    --secondary-foreground-hsl: 0 0% 98%;
+    --muted-hsl: 240 4% 16%;
+    --muted-foreground-hsl: 240 5% 65%;
+    --accent-hsl: 240 4% 16%;
+    --accent-foreground-hsl: 0 0% 98%;
+    --destructive-hsl: 0 63% 31%;
+    --destructive-foreground-hsl: 0 0% 98%;
+    --border-hsl: 240 4% 16%;
+    --input-hsl: 240 4% 16%;
+    --ring-hsl: 234 89% 74%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    @apply bg-app text-ink;
+    font-family:
+      "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft Yahei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+/* 禁用 macOS WKWebView 的橡皮筋 / 回弹效果。
+ * body 不允许滚动，所有滚动都由内部各 overflow-auto 容器自己处理。 */
+html,
+body {
+  overscroll-behavior: none;
+}
+body {
+  overflow: hidden;
+}
+
+/* utility helpers */
+.scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}

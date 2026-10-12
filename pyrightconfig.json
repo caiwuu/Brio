@@ -1,0 +1,18 @@
+{
+  "include": ["python"],
+  "exclude": [
+    "**/__pycache__",
+    ".venv",
+    ".venv-sidecar",
+    ".pyinstaller-build",
+    ".pyinstaller-dist",
+    "node_modules",
+    "src-tauri/target",
+    "brower"
+  ],
+  "extraPaths": ["python"],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic",
+  "venvPath": ".",
+  "venv": ".venv"
+}

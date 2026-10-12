@@ -1,0 +1,154 @@
+# 构建 macOS（Apple Silicon）DMG 和 Windows NSIS 安装包。
+# - 推送 v* 标签：两个平台都构建，并创建一个 draft Release 附上安装包
+# - 手动触发（workflow_dispatch）：只构建，安装包在本次运行的 Artifacts 里下载
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 上游 mac 版 Chromium 只有 arm64，所以只出 Apple Silicon 包
+          - platform: mac
+            os: macos-14
+            triple: aarch64-apple-darwin
+            chromium_dir: brower/mac_armx64
+          - platform: win
+            os: windows-latest
+            triple: x86_64-pc-windows-msvc
+            chromium_dir: brower/win_x64
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    env:
+      TARGET_TRIPLE: ${{ matrix.triple }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag matches app version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version="$(node -p "require('./src-tauri/tauri.conf.json').version")"
+          if [[ "v$version" != "$GITHUB_REF_NAME" ]]; then
+            echo "::error::标签 $GITHUB_REF_NAME 和 src-tauri/tauri.conf.json 的版本 $version 不一致"
+            exit 1
+          fi
+
+      # 版本取 package.json 的 packageManager，这里不能再写 version，否则 action 报版本冲突
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # src-tauri/rust-toolchain.toml 指定 channel = "stable"，这里装好同名工具链供它使用
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ${{ matrix.triple }}
+
+      - name: Resolve Chromium version
+        id: chromium
+        run: echo "version=$(python scripts/fetch_chromium.py --print-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Chromium
+        uses: actions/cache@v4
+        with:
+          path: ${{ matrix.chromium_dir }}
+          key: chromium-${{ matrix.platform }}-${{ steps.chromium.outputs.version }}
+
+      - name: Fetch Chromium
+        run: python scripts/fetch_chromium.py
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 只跑和跨平台相关的用例；sidecar 本身是纯标准库，pytest 只是测试依赖
+      - name: Sidecar unit tests
+        env:
+          PYTHONPATH: python
+        run: |
+          python -m pip install --quiet pytest
+          python -m pytest -q python/tests/test_browser_close.py python/tests/test_stdio_encoding.py
+
+      - name: Build macOS app and DMG
+        if: matrix.platform == 'mac'
+        run: bash scripts/release.sh
+
+      - name: Build Windows installer
+        if: matrix.platform == 'win'
+        run: python scripts/release_windows.py
+
+      - name: Sidecar smoke test
+        run: |
+          suffix=""
+          [[ "${{ matrix.platform }}" == "win" ]] && suffix=".exe"
+          out="$("src-tauri/binaries/brio-py-${TARGET_TRIPLE}${suffix}" ping)"
+          echo "$out"
+          [[ "$out" == *'"event": "pong"'* ]]
+
+      # 用真实 Chromium 走一遍正常关闭（Windows 上是 CDP Browser.close 路径）；仅供参考，不阻塞发布
+      - name: Real Chromium close test
+        continue-on-error: true
+        env:
+          PYTHONPATH: python
+          CHROMIUM_BIN: ${{ matrix.platform == 'win' && format('{0}/brower/win_x64/chrome.exe', github.workspace) || format('{0}/brower/mac_armx64/Chromium.app/Contents/MacOS/Chromium', github.workspace) }}
+        run: python -m pytest -q python/tests/test_browser_close.py -k real
+
+      - name: Collect installers
+        run: |
+          mkdir -p dist-installers
+          bundle="src-tauri/target/$TARGET_TRIPLE/release/bundle"
+          if [[ "${{ matrix.platform }}" == "mac" ]]; then
+            cp "$bundle"/dmg/*.dmg dist-installers/
+          else
+            cp "$bundle"/nsis/*-setup.exe dist-installers/
+          fi
+          ls -lh dist-installers
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brio-${{ matrix.platform }}
+          path: dist-installers/*
+          if-no-files-found: error
+
+  release:
+    name: draft release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist-installers
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: Brio ${{ github.ref_name }}
+          files: dist-installers/*

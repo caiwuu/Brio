@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.venv-sidecar/
+.pyinstaller-build/
+.pyinstaller-dist/
+.ruff_cache/
+
+# Node / Vite
+node_modules/
+dist/
+dist-ssr/
+*.log
+.DS_Store
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+src-tauri/binaries/brio-py
+src-tauri/binaries/brio-py-*
+src-tauri/resources/chromium/
+brower/
+
+# 旧的本地数据，新版本走系统应用数据目录
+browser_data/
+identity/
